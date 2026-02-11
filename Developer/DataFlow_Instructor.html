@@ -1,0 +1,132 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Re:Boot Instructor Workflow & Data Processing</title>
+    <script src="https://cdn.jsdelivr.net/npm/mermaid/dist/mermaid.min.js"></script>
+    <script>
+        mermaid.initialize({
+            startOnLoad: true,
+            theme: 'base',
+            themeVariables: {
+                primaryColor: '#fff9c4', /* 강사용 노란색 테마 */
+                edgeLabelBackground: '#ffffff',
+                tertiaryColor: '#f4f4f4',
+                fontSize: '16px'
+            },
+            flowchart: { useMaxWidth: false }
+        });
+    </script>
+    <style>
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            margin: 0;
+            padding: 20px;
+            background-color: #fffde7;
+            /* 배경색 변경 */
+            color: #333;
+            font-size: 16px;
+        }
+
+        .container {
+            max-width: 100%;
+            margin: 0 auto;
+            background-color: white;
+            padding: 30px;
+            border-radius: 12px;
+            box-shadow: 0 4px 20px rgba(0, 0, 0, 0.1);
+            overflow-x: auto;
+        }
+
+        h1 {
+            text-align: center;
+            color: #f57f17;
+            /* 주황색 포인트 */
+            margin-bottom: 20px;
+            font-size: 2em;
+        }
+
+        .mermaid {
+            display: flex;
+            justify-content: center;
+            margin-top: 20px;
+            min-width: 1000px;
+        }
+
+        .description-box {
+            background-color: #fff3e0;
+            border-left: 5px solid #ff9800;
+            padding: 20px;
+            margin-bottom: 30px;
+            border-radius: 4px;
+        }
+
+        .step {
+            margin-bottom: 10px;
+        }
+
+        .step strong {
+            color: #e65100;
+        }
+    </style>
+</head>
+
+<body>
+    <div class="container">
+        <h1>강사(Instructor) 데이터 흐름도: 강의 업로드 및 AI 처리 과정</h1>
+
+        <div class="description-box">
+            <h3>📌 핵심 프로세스: 업로드 → 듣기(STT) → 기억하기(Embedding)</h3>
+            <div class="step"><strong>1. 강의 업로드</strong>: 강사가 영상 파일을 업로드하면, 시스템은 즉시 <strong>두 가지 작업</strong>을 시작합니다.
+            </div>
+            <div class="step"><strong>2. STT (Speech-to-Text)</strong>: 영상을 <strong>OpenAI Whisper</strong>에게 보내 모든 대사를
+                텍스트로 받아옵니다. (스크립트 생성)</div>
+            <div class="step"><strong>3. 임베딩 (Embedding)</strong>: 받아온 텍스트를 문맥 단위로 쪼개어 <strong>OpenAI
+                    Embeddings</strong>에게 보냅니다. 돌아온 벡터값(숫자)을 <strong>DB(pgvector)</strong>에 저장합니다.</div>
+            <div class="step"><strong>4. 완료</strong>: 이제 이 강의는 <strong>"검색 가능한 지식"</strong>이 되어, 학생들의 질문에 답변할 준비가 됩니다.
+            </div>
+        </div>
+
+        <div class="mermaid">
+            sequenceDiagram
+            autonumber
+
+            actor Instructor as 👨‍🏫 강사 (Instructor)
+            participant FE as 🖥️ 프론트엔드 (Vue.js Admin)
+            participant API as 🚪 API 엔드포인트 (Django)
+            participant AI_STT as 👂 AI (Whisper STT)
+            participant AI_EMB as 🧠 AI (Embeddings)
+            participant DB as 🗄️ 데이터베이스 (PostgreSQL + pgvector)
+
+            %% 시나리오: 강의 업로드 및 지식화
+            rect rgb(255, 248, 225)
+            Note over Instructor, DB: 강의 영상 업로드 및 AI 지식화 과정
+
+            Instructor->>FE: 1. 강의 영상 파일 선택 및 업로드
+            FE->>API: POST /api/lectures/upload/ (파일 전송)
+
+            par 병렬 처리 (영상 저장 + AI 분석)
+            API->>DB: 2-1. 영상 URL 및 기본 정보 저장 (INSERT)
+
+            Note right of API: 여기서부터 AI 처리가 시작됩니다.
+            API->>AI_STT: 2-2. 오디오 추출 후 음성 인식 요청
+            AI_STT-->>API: 텍스트 스크립트 반환 ("안녕하세요, 오늘은...")
+
+            API->>DB: 2-3. 스크립트(original_script) 업데이트
+
+            API->>AI_EMB: 2-4. 스크립트를 벡터(숫자)로 변환 요청
+            AI_EMB-->>API: 벡터 데이터 반환 ([0.12, -0.53, ...])
+
+            API->>DB: 2-5. 벡터(embedding) 저장 (pgvector)
+            end
+
+            API-->>FE: 업로드 및 처리 완료 응답
+            FE-->>Instructor: "업로드 성공! AI 분석 완료" 메시지 표시
+            end
+        </div>
+    </div>
+</body>
+
+</html>
