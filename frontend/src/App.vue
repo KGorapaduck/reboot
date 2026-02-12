@@ -41,6 +41,8 @@ const handleLogout = () => {
           <template v-if="userRole === 'STUDENT'">
             <RouterLink to="/dashboard" class="nav-link">대시보드</RouterLink>
             <RouterLink to="/classroom" class="nav-link">강의실</RouterLink>
+            <RouterLink to="/portfolio" class="nav-link">포트폴리오</RouterLink>
+            <RouterLink to="/interview" class="nav-link">모의면접</RouterLink>
             <RouterLink to="/mypage" class="nav-link">마이페이지</RouterLink>
           </template>
 

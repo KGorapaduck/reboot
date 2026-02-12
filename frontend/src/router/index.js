@@ -42,6 +42,18 @@ const router = createRouter({
       name: 'instructor',
       component: () => import('../views/Instructor/InstructorDashboard.vue'),
       meta: { requiresAuth: true, role: 'INSTRUCTOR' }
+    },
+    {
+      path: '/portfolio',
+      name: 'portfolio',
+      component: () => import('../views/Portfolio/PortfolioView.vue'),
+      meta: { requiresAuth: true, role: 'STUDENT' }
+    },
+    {
+      path: '/interview',
+      name: 'interview',
+      component: () => import('../views/Interview/InterviewView.vue'),
+      meta: { requiresAuth: true, role: 'STUDENT' }
     }
   ]
 })

@@ -135,6 +135,38 @@
             API-->>FE: AI 답변 반환
             FE-->>User: 채팅창에 답변 표시
             end
+
+            %% 시나리오 4: 포트폴리오 생성
+            rect rgb(225, 245, 254)
+            Note over User, AI: 4. 포트폴리오 생성 (Skill 기반)
+            User->>FE: "포트폴리오 생성" 클릭
+            FE->>API: POST /api/portfolio/generate/
+            API->>DB: UserSkill 및 Project 이력 조회
+            DB-->>API: 사용자 성취 데이터 반환
+            API->>AI: "이 데이터로 이력서 작성해줘" (Prompt)
+            AI-->>API: 마크다운 이력서 생성
+            API->>DB: Portfolio 저장
+            API-->>FE: 생성된 포트폴리오 반환
+            FE-->>User: 이력서 미리보기 화면 표시
+            end
+
+            %% 시나리오 5: 모의 면접 (Persona Chat)
+            rect rgb(255, 235, 238)
+            Note over User, AI: 5. 모의 면접 진 (Persona)
+            User->>FE: 면접관(Tech Lead) 선택 및 시작
+            FE->>API: POST /api/interview/start/ (Persona ID)
+            API->>DB: MockInterviewSession 생성
+            API-->>FE: 세션 ID 반환
+            loop 면접 대화
+            User->>FE: 답변 입력
+            FE->>API: POST /api/interview/chat/ (답변)
+            API->>AI: 페르소나 프롬프트 + 답변 전송
+            AI-->>API: 꼬리물기 질문 생성
+            API->>DB: 대화 내용 저장
+            API-->>FE: AI 질문 반환
+            FE-->>User: 채팅창에 질문 표시
+            end
+            end
         </div>
     </div>
 </body>
