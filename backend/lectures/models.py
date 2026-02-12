@@ -15,12 +15,22 @@ class Course(models.Model):
         return self.title
 
 class Lecture(models.Model):
+    class AIStatus(models.TextChoices):
+        PENDING = 'PENDING', 'Pending'
+        PROCESSING = 'PROCESSING', 'Processing'
+        COMPLETED = 'COMPLETED', 'Completed'
+        FAILED = 'FAILED', 'Failed'
+
     id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
     course = models.ForeignKey(Course, on_delete=models.CASCADE, related_name='lectures')
     title = models.CharField(max_length=200)
     video_url = models.URLField()
     duration = models.IntegerField(help_text="Duration in seconds")
     order_index = models.IntegerField(default=0)
+    
+    # AI Processing Fields
+    ai_status = models.CharField(max_length=20, choices=AIStatus.choices, default=AIStatus.PENDING)
+    processing_error = models.TextField(blank=True, null=True)
     original_script = models.TextField(blank=True, help_text="Whisper STT result")
     embedding = VectorField(dimensions=1536, blank=True, null=True) # OpenAI embedding dimension
     created_at = models.DateTimeField(auto_now_add=True)

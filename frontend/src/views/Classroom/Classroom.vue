@@ -1,7 +1,7 @@
 <template>
   <div class="glass-container">
-    <h1>Classroom</h1>
-    <p>Lecture Video and AI Tutor will appear here.</p>
+    <h1>강의실</h1>
+    <p>강의 영상 및 AI 튜터가 이곳에 표시됩니다.</p>
   </div>
 </template>
 

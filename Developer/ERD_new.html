@@ -68,8 +68,9 @@
             %% 사용자 및 인증 (User Management)
             User {
             int id PK
-            string email UK "로그인 이메일"
+            string username UK "로그인 ID"
             string password "해시된 비밀번호"
+            string email "이메일 (선택)"
             string nickname "닉네임"
             string role "STUDENT, INSTRUCTOR, ADMIN"
             datetime created_at
@@ -87,7 +88,8 @@
             int id PK
             string title "강좌명"
             string description "강좌 설명"
-            int created_by FK "강사 ID"
+            string category "카테고리"
+            int instructor_id FK "강사 ID"
             datetime created_at
             }
 
@@ -97,8 +99,10 @@
             string title "강의 제목"
             string video_url "영상 URL"
             int order_index "순서"
+            string ai_status "PENDING, PROCESSING, COMPLETED"
+            text processing_error "AI 처리 에러 로그"
             text original_script "Whisper STT 결과"
-            vector embedding "pgvector (768 dim) - 검색용"
+            vector embedding "pgvector (1536 dim) - 검색용"
             }
 
             %% AI 및 학습 도구 (AI & Study Tools)

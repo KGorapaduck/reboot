@@ -10,8 +10,9 @@ erDiagram
     %% 사용자 및 인증 (User Management)
     User {
         int id PK
-        string email UK "로그인 이메일"
+        string username UK "로그인 ID"
         string password "해시된 비밀번호"
+        string email "이메일 (선택)"
         string nickname "닉네임"
         string role "STUDENT, INSTRUCTOR, ADMIN"
         datetime created_at
@@ -29,7 +30,8 @@ erDiagram
         int id PK
         string title "강좌명"
         string description "강좌 설명"
-        int created_by FK "강사 ID"
+        string category "카테고리"
+        int instructor_id FK "강사 ID"
         datetime created_at
     }
 
@@ -39,8 +41,10 @@ erDiagram
         string title "강의 제목"
         string video_url "영상 URL"
         int order_index "순서"
+        string ai_status "PENDING, PROCESSING, COMPLETED"
+        text processing_error "AI 처리 에러 로그"
         text original_script "Whisper STT 결과"
-        vector embedding "pgvector (768 dim) - 검색용"
+        vector embedding "pgvector (1536 dim) - 검색용"
     }
 
     %% AI 및 학습 도구 (AI & Study Tools)
@@ -239,3 +243,34 @@ erDiagram
 ### 6. 모의 면접 (Mock Interview)
 - **InterviewPersona**: 기술 면접(CTO, Tech Lead), 인성 면접(HR), 비즈니스 면접(VC, Customer) 등 다양한 페르소나 정의.
 - **MockInterviewSession**: 사용자가 작성한 `Portfolio`를 면접관 AI가 분석하고 질문하는 세션.
+
+---
+
+## 🔑 주요 필드(컬럼) 상세 설명
+
+데이터베이스를 처음 접하는 분들을 위한 주요 필드 역할 설명입니다.
+
+### 1. 기본 식별자 (Primary Key & Foreign Key)
+- **`id` (PK)**:
+    - **역할**: 각 행(Row)을 구분하는 **주민등록번호** 같은 고유 식별자입니다.
+    - **특징**: 중복될 수 없으며, 모든 테이블에 기본적으로 존재합니다. (예: `User` 테이블의 `id=1`은 '철수', `id=2`는 '영희')
+- **`user_id`, `course_id`, `lecture_id` (FK)**:
+    - **역할**: 다른 테이블을 가리키는 **연결 고리**입니다.
+    - **예시**: `Lecture` 테이블의 `course_id`는 "이 강의가 어떤 강좌(`Course`)에 소속되어 있는지"를 나타냅니다.
+
+### 2. 사용자 관련 필드 (User Table)
+- **`username`**: 로그인할 때 사용하는 **아이디**입니다. (중복 불가)
+- **`password`**: 로그인 비밀번호입니다. (보안을 위해 암호화되어 저장되므로, DB 관리자도 실제 비번을 알 수 없습니다.)
+- **`role`**: 사용자의 **권한 등급**입니다.
+    - `STUDENT`: 강의 듣는 학생
+    - `INSTRUCTOR`: 강의 올리는 강사
+    - `ADMIN`: 전체 관리자
+
+### 3. 강사 대시보드 관련 필드 (Lecture Table)
+- **`ai_status`**: 사용자가 업로드한 영상의 AI 분석 진행 상황입니다.
+    - `PENDING`: 업로드 직후, 대기 중
+    - `PROCESSING`: AI가 열심히 분석 중 (STT, 요약 등)
+    - `COMPLETED`: 분석 완료, 학생들에게 공개 가능
+    - `FAILED`: 분석 실패 (에러 발생)
+- **`processing_error`**: 만약 `ai_status`가 `FAILED`라면, **왜 실패했는지** 이유를 적어두는 메모장입니다.
+

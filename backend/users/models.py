@@ -12,13 +12,14 @@ class User(AbstractUser):
     nickname = models.CharField(max_length=50, blank=True)
     role = models.CharField(max_length=20, choices=Role.choices, default=Role.STUDENT)
     
-    # 이메일을 고유 식별자로 사용하기 위한 설정
-    email = models.EmailField(unique=True)
-    USERNAME_FIELD = 'email'
-    REQUIRED_FIELDS = ['username', 'nickname']
+    # 이메일은 선택사항이지만 고유해야 함 (옵션)
+    email = models.EmailField(unique=True, blank=True, null=True)
+    
+    # USERNAME_FIELD = 'username' (기본값)
+    REQUIRED_FIELDS = ['email', 'nickname']
 
     def __str__(self):
-        return self.email
+        return self.username
 
 class UserProfile(models.Model):
     class CareerGoal(models.TextChoices):

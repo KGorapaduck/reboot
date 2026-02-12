@@ -57,6 +57,8 @@
 
 #### [NEW] 프로젝트 구조
 - `src/components/common`: GlassCard, GlassButton 등 공통 디자인 컴포넌트
+- `src/views/HomeView`: 랜딩 페이지 (로그인 전 메인)
+- `src/views/Auth`: 로그인/회원가입 (Student/Instructor 분리)
 - `src/views/Dashboard`: 학습 현황, 리라우팅 알림
 - `src/views/Classroom`: 강의 시청, 실시간 AI 노트, 챗봇 인터페이스
 - `src/views/MyPage`: 스킬 블록 시각화, 포트폴리오 다운로드
