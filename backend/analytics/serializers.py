@@ -7,7 +7,7 @@ class CurriculumItemSerializer(serializers.ModelSerializer):
 
     class Meta:
         model = CurriculumItem
-        fields = ['id', 'lecture', 'order_index', 'is_completed', 'completed_at']
+        fields = ['id', 'lecture', 'order_index', 'is_completed', 'completed_at', 'learning_status', 'reflection_data']
         read_only_fields = ['lecture', 'completed_at']
 
 class ReroutingLogSerializer(serializers.ModelSerializer):
@@ -18,8 +18,10 @@ class ReroutingLogSerializer(serializers.ModelSerializer):
 class CurriculumDetailSerializer(serializers.ModelSerializer):
     items = CurriculumItemSerializer(many=True, read_only=True)
     rerouting_logs = ReroutingLogSerializer(many=True, read_only=True)
+    course_title = serializers.CharField(source='course.title', read_only=True)
+    course_id = serializers.IntegerField(source='course.id', read_only=True)
 
     class Meta:
         model = Curriculum
-        fields = ['id', 'user', 'course', 'status', 'start_date', 'target_date', 'items', 'rerouting_logs']
-        read_only_fields = ['user', 'course', 'start_date', 'items', 'rerouting_logs']
+        fields = ['id', 'user', 'course_id', 'course_title', 'status', 'start_date', 'target_date', 'items', 'rerouting_logs', 'retention_metrics']
+        read_only_fields = ['user', 'start_date', 'items', 'rerouting_logs']

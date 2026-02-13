@@ -4,7 +4,7 @@ from rest_framework.routers import DefaultRouter
 from users.views import UserViewSet
 from lectures.views import CourseViewSet, LectureViewSet, QuizViewSet
 from ai_tutor.views import LectureNoteViewSet, AIChatSessionViewSet
-from analytics.views import CurriculumViewSet
+from analytics.views import CurriculumViewSet, DashboardDataView
 from assets.views import PortfolioViewSet, SkillBlockViewSet
 from career.views import MockInterviewSessionViewSet, InterviewPersonaViewSet
 
@@ -23,5 +23,6 @@ router.register(r'personas', InterviewPersonaViewSet)
 
 urlpatterns = [
     path('admin/', admin.site.urls),
+    path('api/dashboard/', DashboardDataView.as_view(), name='dashboard-data'),
     path('api/', include(router.urls)),
 ]

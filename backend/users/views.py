@@ -2,7 +2,8 @@ from rest_framework import viewsets, status
 from rest_framework.decorators import action
 from rest_framework.response import Response
 from rest_framework.permissions import IsAuthenticated, AllowAny
-from django.contrib.auth import get_user_model
+from rest_framework.authtoken.models import Token
+from django.contrib.auth import get_user_model, authenticate
 from .serializers import UserSerializer, UserProfileSerializer
 from .models import UserProfile
 
@@ -17,6 +18,21 @@ class UserViewSet(viewsets.ModelViewSet):
         if self.action in ['create', 'login']:
             return [AllowAny()]
         return super().get_permissions()
+
+    @action(detail=False, methods=['post'])
+    def login(self, request):
+        username = request.data.get('username')
+        password = request.data.get('password')
+        
+        user = authenticate(username=username, password=password)
+        if user:
+            token, _ = Token.objects.get_or_create(user=user)
+            return Response({
+                'token': token.key,
+                'role': user.role,
+                'username': user.username
+            })
+        return Response({'error': 'Invalid Credentials'}, status=status.HTTP_400_BAD_REQUEST)
 
     @action(detail=False, methods=['get'])
     def me(self, request):

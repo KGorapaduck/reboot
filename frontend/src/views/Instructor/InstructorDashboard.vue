@@ -52,6 +52,17 @@
               <span class="status-badge" :class="lecture.ai_status.toLowerCase()">
                 {{ { 'PENDING': '대기중', 'PROCESSING': '분석중', 'COMPLETED': '완료', 'FAILED': '실패' }[lecture.ai_status] || lecture.ai_status }}
               </span>
+              
+              <!-- Manual Trigger Button -->
+              <button 
+                v-if="['PENDING', 'FAILED'].includes(lecture.ai_status)" 
+                @click="triggerAIAnalysis(lecture.id)"
+                class="ai-trigger-btn"
+                title="AI 분석 시작"
+              >
+                🤖
+              </button>
+
               <div v-if="lecture.ai_status === 'FAILED'" class="error-msg">
                 ⚠ {{ lecture.processing_error === 'Audio track missing' ? '오디오 트랙 없음' : lecture.processing_error }}
               </div>
@@ -65,6 +76,7 @@
 
 <script setup>
 import { ref, onMounted } from 'vue'
+import api from '../../api/axios'
 
 const isUploading = ref(false)
 const newLecture = ref({
@@ -73,55 +85,104 @@ const newLecture = ref({
   description: ''
 })
 
-// Mock Data for now
-const lectures = ref([
-  {
-    id: 1,
-    title: 'Python Basics - Variable',
-    videoUrl: 'http://example.com/1',
-    ai_status: 'COMPLETED',
-    created_at: '2024-05-20'
-  },
-  {
-    id: 2,
-    title: 'Advanced AI Concepts',
-    videoUrl: 'http://example.com/2',
-    ai_status: 'PROCESSING',
-    created_at: '2024-05-21'
-  },
-  {
-    id: 3,
-    title: 'Broken Video Test',
-    videoUrl: 'http://example.com/3',
-    ai_status: 'FAILED',
-    processing_error: 'Audio track missing',
-    created_at: '2024-05-22'
+const lectures = ref([])
+const loading = ref(false)
+
+// API Base URL (Removed, as api/axios.js handles base URL)
+
+const fetchLectures = async () => {
+  loading.value = true
+  try {
+    // Assuming we have a course ID or just fetching all lectures for the instructor
+    // For now, let's fetch all lectures (Instructor permission should filter them in backend)
+    // Or we need to know which course we are managing. 
+    // Let's assume there is a 'lectures' endpoint or we fetch via course.
+    // Given the current backend, we have /api/lectures/.
+    const response = await api.get('/lectures/')
+    lectures.value = response.data.results || response.data
+  } catch (error) {
+    console.error('Failed to fetch lectures:', error)
+    alert('강의 목록을 불러오는데 실패했습니다.')
+  } finally {
+    loading.value = false
   }
-])
+}
 
 const handleUpload = async () => {
+  if (!newLecture.value.title || !newLecture.value.videoUrl) {
+    alert('제목과 URL을 입력해주세요.')
+    return
+  }
+
   isUploading.value = true
-  
-  // Simulate API call
-  setTimeout(() => {
-    lectures.value.unshift({
-      id: Date.now(),
-      title: newLecture.value.title,
-      videoUrl: newLecture.value.videoUrl,
-      ai_status: 'PENDING',
-      created_at: new Date().toISOString().split('T')[0]
-    })
+  try {
+    // We need a course ID to create a lecture. 
+    // For prototype, we might need to hardcode one or select one.
+    // Let's fetch the first course of the instructor to attach this lecture to
+    // OR create a default course if none exists.
     
+    // 1. Get Course (Mocking selection of first course for now)
+    const coursesRes = await api.get('/courses/')
+    let courseId = null
+    if (coursesRes.data.results && coursesRes.data.results.length > 0) {
+      courseId = coursesRes.data.results[0].id
+    } else {
+      // Create a dummy course if needed or alert
+      alert('등록된 코스가 없습니다. 먼저 코스를 생성해주세요.')
+      isUploading.value = false
+      return
+    }
+
+    // 2. Create Lecture
+    const payload = {
+      course: courseId,
+      title: newLecture.value.title,
+      video_url: newLecture.value.videoUrl,
+      description: newLecture.value.description,
+      duration: 0 // Will be updated by AI or frontend duration check
+    }
+    
+    const res = await api.post('/lectures/', payload)
+    
+    alert('강의가 등록되었습니다. AI 분석을 시작합니다.')
+    
+    // 3. Trigger AI Analysis automatically
+    triggerAIAnalysis(res.data.id)
+    
+    // Reset form and refresh list
     newLecture.value = { title: '', videoUrl: '', description: '' }
+    fetchLectures()
+    
+  } catch (error) {
+    console.error('Upload failed:', error)
+    alert('강의 업로드 실패: ' + (error.response?.data?.detail || error.message))
+  } finally {
     isUploading.value = false
-    alert('강의가 업로드되었습니다! AI 분석이 시작됩니다.')
-  }, 1000)
+  }
 }
 
-const fetchLectures = () => {
-  // TODO: Fetch from backend API
-  console.log('최신 강의 목록을 불러오는 중...')
+const triggerAIAnalysis = async (lectureId) => {
+  try {
+    // Optimistic update
+    const lec = lectures.value.find(l => l.id === lectureId)
+    if (lec) lec.ai_status = 'PROCESSING'
+
+    await api.post(`/lectures/${lectureId}/process_video/`, {
+        video_url: lec?.video_url
+    })
+    
+    alert('AI 분석 요청이 완료되었습니다. 잠시 후 새로고침 해주세요.')
+    fetchLectures() // To get updated status if sync, or wait for polling
+  } catch (error) {
+    console.error('AI Processing request failed:', error)
+    alert('AI 분석 요청 실패')
+    if (lec) lec.ai_status = 'FAILED'
+  }
 }
+
+onMounted(() => {
+  fetchLectures()
+})
 </script>
 
 <style scoped>
@@ -324,5 +385,20 @@ const fetchLectures = () => {
 .lecture-list::-webkit-scrollbar-thumb {
   background: rgba(255,255,255,0.2);
   border-radius: 3px;
+}
+.ai-trigger-btn {
+  background: rgba(34, 197, 94, 0.2);
+  border: 1px solid rgba(34, 197, 94, 0.4);
+  color: #4ade80;
+  border-radius: 4px;
+  margin-left: 8px;
+  cursor: pointer;
+  padding: 2px 6px;
+  transition: all 0.2s;
+}
+
+.ai-trigger-btn:hover {
+  background: rgba(34, 197, 94, 0.4);
+  transform: scale(1.1);
 }
 </style>

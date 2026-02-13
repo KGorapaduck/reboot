@@ -41,6 +41,10 @@
         </div>
       </form>
 
+      <p v-if="errorMsg" style="color: #ef4444; font-size: 0.9rem; margin-top: 10px; text-align: center;">
+        {{ errorMsg }}
+      </p>
+
       <div class="button-group">
         <button @click="handleLogin" class="glass-button primary-btn">
           로그인
@@ -60,24 +64,51 @@
 <script setup>
 import { ref } from 'vue'
 import { useRouter } from 'vue-router'
+import api from '../../api/axios' // Import configured axios
 
 const router = useRouter()
 const userType = ref('STUDENT')
 const username = ref('')
 const password = ref('')
+const errorMsg = ref('')
 
-const handleLogin = () => {
-  // TODO: Implement actual API login
-  console.log(`Logging in as ${userType.value} with ${username.value}`)
+const handleLogin = async () => {
+  errorMsg.value = ''
   
-  // Mock login success
-  localStorage.setItem('user_role', userType.value)
-  localStorage.setItem('auth_token', 'mock_token')
-  
-  if (userType.value === 'INSTRUCTOR') {
-    router.push('/instructor')
-  } else {
-    router.push('/dashboard')
+  if (!username.value || !password.value) {
+    errorMsg.value = '아이디와 비밀번호를 입력해주세요.'
+    return
+  }
+
+  try {
+    const response = await api.post('/users/login/', {
+      username: username.value,
+      password: password.value
+    })
+
+    const { token, role, username: returnedUsername } = response.data
+
+    // Save token and info
+    localStorage.setItem('auth_token', token)
+    localStorage.setItem('user_role', role)
+    localStorage.setItem('username', returnedUsername)
+
+    console.log(`Login successful as ${role}`)
+
+    // Redirect based on role
+    if (role === 'INSTRUCTOR') {
+      router.push('/instructor')
+    } else {
+      router.push('/dashboard')
+    }
+
+  } catch (error) {
+    console.error('Login failed:', error)
+    if (error.response && error.response.status === 400) {
+       errorMsg.value = '아이디 또는 비밀번호가 올바르지 않습니다.'
+    } else {
+       errorMsg.value = '로그인 중 문제가 발생했습니다. 서버 상태를 확인해주세요.'
+    }
   }
 }
 </script>

@@ -15,6 +15,7 @@ class Curriculum(models.Model):
     status = models.CharField(max_length=20, choices=Status.choices, default=Status.ACTIVE)
     start_date = models.DateTimeField(auto_now_add=True)
     target_date = models.DateTimeField(help_text="Goal date for completion")
+    retention_metrics = models.JSONField(default=dict, blank=True, help_text="Dropout risk analysis data")
 
     def __str__(self):
         return f"{self.user} - {self.course} ({self.status})"
@@ -26,6 +27,10 @@ class CurriculumItem(models.Model):
     order_index = models.IntegerField(help_text="Dynamically adjustable order")
     is_completed = models.BooleanField(default=False)
     completed_at = models.DateTimeField(null=True, blank=True)
+    
+    # New JSON Fields for detailed tracking
+    learning_status = models.JSONField(default=dict, blank=True, help_text="Micro-tracking of watch history and checkpoints")
+    reflection_data = models.JSONField(default=dict, blank=True, help_text="User reflections and AI feedback")
 
     class Meta:
         ordering = ['order_index']

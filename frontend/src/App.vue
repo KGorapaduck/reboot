@@ -1,10 +1,12 @@
 <script setup>
 import { computed, ref, watch } from 'vue'
 import { RouterLink, RouterView, useRoute, useRouter } from 'vue-router'
+import ClassroomModal from './components/Classroom/ClassroomModal.vue'
 
 const route = useRoute()
 const router = useRouter()
 const userRole = ref(localStorage.getItem('user_role'))
+const showClassroomModal = ref(false)
 
 // Update role when route changes (e.g. after login)
 watch(route, () => {
@@ -23,6 +25,19 @@ const handleLogout = () => {
   alert('로그아웃 되었습니다.')
   router.push('/')
 }
+
+const openClassroomSelection = () => {
+  showClassroomModal.value = true
+}
+
+const handleClassroomConfirm = ({ mode, url }) => {
+  showClassroomModal.value = false
+  if (mode === 'live') {
+    router.push({ name: 'classroom', query: { mode: 'live' } })
+  } else {
+    router.push({ name: 'classroom', query: { mode: 'youtube', youtube_url: url } })
+  }
+}
 </script>
 
 <template>
@@ -40,7 +55,7 @@ const handleLogout = () => {
           <!-- Student Links -->
           <template v-if="userRole === 'STUDENT'">
             <RouterLink to="/dashboard" class="nav-link">대시보드</RouterLink>
-            <RouterLink to="/classroom" class="nav-link">강의실</RouterLink>
+            <button class="nav-link" @click="openClassroomSelection">강의실</button>
             <RouterLink to="/portfolio" class="nav-link">포트폴리오</RouterLink>
             <RouterLink to="/interview" class="nav-link">모의면접</RouterLink>
             <RouterLink to="/mypage" class="nav-link">마이페이지</RouterLink>
@@ -59,6 +74,12 @@ const handleLogout = () => {
       </div>
     </div>
   </header>
+
+  <ClassroomModal 
+    :show="showClassroomModal" 
+    @close="showClassroomModal = false"
+    @confirm="handleClassroomConfirm"
+  />
 
   <main :style="showNavbar ? 'padding: 10px' : ''">
     <RouterView />

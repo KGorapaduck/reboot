@@ -18,7 +18,7 @@ class OpenAIService:
         try:
             with open(file_path, "rb") as audio_file:
                 transcription = client.audio.transcriptions.create(
-                    model="whisper-1",
+                    model="Faster-Whisper",
                     file=audio_file
                 )
             return transcription.text

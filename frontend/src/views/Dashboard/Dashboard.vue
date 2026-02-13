@@ -44,6 +44,43 @@
       </div>
     </section>
 
+    <!-- Learning Diagnosis Section (New) -->
+    <section class="diagnosis-section">
+      <h2 class="section-title">학습 진단 리포트 (Beta)</h2>
+      <div class="diagnosis-grid">
+        <!-- Cohort Comparison -->
+        <div class="glass-card diagnosis-card">
+          <h3>나의 위치</h3>
+          <p class="desc">수강생 평균 대비 진도율</p>
+          <div class="comparison-chart">
+            <div class="bar-group">
+              <span class="label">나 ({{ activeCurriculum.progress }}%)</span>
+              <div class="bar-bg"><div class="bar-fill my-bar" :style="{ width: `${activeCurriculum.progress}%` }"></div></div>
+            </div>
+            <div class="bar-group">
+              <span class="label">평균 ({{ cohortStats.avg_progress }}%)</span>
+              <div class="bar-bg"><div class="bar-fill avg-bar" :style="{ width: `${cohortStats.avg_progress}%` }"></div></div>
+            </div>
+          </div>
+          <p class="insight">{{ progressInsight }}</p>
+        </div>
+
+        <!-- Retention / Risk Analysis -->
+        <div class="glass-card diagnosis-card">
+          <h3>이탈 위험도 분석</h3>
+          <div class="risk-meter">
+            <div class="risk-circle" :class="retentionMetrics.riskLevel">
+              <span>{{ retentionMetrics.dropout_risk_score * 100 }}%</span>
+            </div>
+            <div class="risk-info">
+              <p>현재 <strong>{{ riskLabel }}</strong> 상태입니다.</p>
+              <p class="suggestion">{{ riskSuggestion }}</p>
+            </div>
+          </div>
+        </div>
+      </div>
+    </section>
+
     <!-- Goals/Curriculum Section -->
     <section class="goals-section">
       <h2 class="section-title">내 커리큘럼 (My Curriculums)</h2>
@@ -79,6 +116,7 @@
             <div class="lecture-info">
                 <h3>{{ lecture.title }}</h3>
                 <span class="course-name">{{ lecture.course_name }}</span>
+                <span class="last-accessed">{{ new Date(lecture.last_accessed).toLocaleDateString() }}</span>
             </div>
             <div class="play-icon">▶</div>
         </div>
@@ -93,60 +131,83 @@
 </template>
 
 <script setup>
-import { ref, onMounted } from 'vue'
+import { ref, onMounted, computed } from 'vue'
 import { useRouter } from 'vue-router'
+import api from '../../api/axios'
 
 const router = useRouter()
 
-// Mock User Data based on ERD User & UserProfile
-const user = ref({
-    id: 1,
-    username: 'student1',
-    nickname: '열공러',
-    role: 'STUDENT',
-    career_goal: 'JOB_SEEKER'
+// Data refs
+const user = ref({})
+const totalStudyTime = ref(0)
+const completedLecturesCount = ref(0)
+const earnedSkillsCount = ref(0)
+const curriculums = ref([])
+const recentLectures = ref([])
+
+// Advanced Analytics Data
+const cohortStats = ref({ avg_progress: 0, avg_quiz_score: 0 })
+const retentionMetrics = ref({ dropout_risk_score: 0, riskLevel: 'low', quiz_fail_streak: 0 })
+
+const riskLabel = computed(() => {
+    const score = retentionMetrics.value.dropout_risk_score * 100
+    if (score > 70) return '위험'
+    if (score > 30) return '주의'
+    return '안전'
 })
 
-// Mock Statistics
-const totalStudyTime = ref(420) // minutes
-const completedLecturesCount = ref(12)
-const earnedSkillsCount = ref(3)
+const riskSuggestion = computed(() => {
+    const score = retentionMetrics.value.dropout_risk_score * 100
+    if (score > 70) return '상담을 신청하거나 복습이 필요합니다!'
+    if (score > 30) return '조금 더 집중해서 강의를 들어보세요.'
+    return '현재 아주 잘하고 계십니다! 🚀'
+})
 
-// Mock Curriculums based on ERD Curriculum & CurriculumItem
-const curriculums = ref([
-    {
-        id: 101,
-        course_id: 1,
-        course_title: 'Full Stack Web Development',
-        status: 'ACTIVE',
-        target_date: '2023-12-31',
-        progress: 45 // Calculated from CurriculumItems
-    },
-    {
-        id: 102,
-        course_id: 2,
-        course_title: 'Python for Data Science',
-        status: 'ACTIVE',
-        target_date: '2024-01-15',
-        progress: 10
-    }
-])
+const loading = ref(true)
+const error = ref(null)
 
-// Mock Recent Lectures based on Access History (or sorted CurriculumItems)
-const recentLectures = ref([
-    {
-        id: 1001,
-        course_name: 'Full Stack Web Development',
-        title: 'Introduction to Vue.js',
-        last_accessed: '2023-10-27T10:00:00'
-    },
-    {
-        id: 2005,
-        course_name: 'Python for Data Science',
-        title: 'Pandas Basics',
-        last_accessed: '2023-10-26T15:30:00'
+// API Fetch
+const fetchDashboardData = async () => {
+    try {
+        loading.value = true
+        // Assuming backend runs on port 8000. Setup vite proxy or absolute URL for now.
+        const response = await api.get('/dashboard/')
+        const data = response.data
+        
+        user.value = data.user
+        totalStudyTime.value = data.stats.total_study_time
+        completedLecturesCount.value = data.stats.completed_lectures_count
+        earnedSkillsCount.value = data.stats.earned_skills_count
+        curriculums.value = data.curriculums
+        recentLectures.value = data.recent_lectures
+        
+        // Extract cohort stats & retention from first curriculum for demo
+        if (data.curriculums.length > 0) {
+            cohortStats.value = data.curriculums[0].cohort_analytics || { avg_progress: 0 }
+            retentionMetrics.value = data.curriculums[0].retention_metrics || { dropout_risk_score: 0 }
+        }
+    } catch (err) {
+        console.error("Dashboard fetch error:", err)
+        error.value = "데이터를 불러오는 데 실패했습니다."
+    } finally {
+        loading.value = false
     }
-])
+}
+
+onMounted(() => {
+    fetchDashboardData()
+})
+
+const activeCurriculum = computed(() => curriculums.value[0] || { progress: 0 })
+
+const progressInsight = computed(() => {
+    if (!activeCurriculum.value) return "로딩 중..."
+    const diff = activeCurriculum.value.progress - cohortStats.value.avg_progress
+    if (diff > 10) return "훌륭합니다! 평균보다 앞서가고 있어요. 🚀"
+    if (diff < -10) return "조금 뒤쳐져 있지만, 꾸준히 하면 따라잡을 수 있어요! 💪"
+    return "평균적인 속도로 잘 진행하고 있습니다. 👌"
+})
+
 
 const resumeLearning = (courseId) => {
   // Logic to find the next unfinished lecture in the course
@@ -243,6 +304,106 @@ const startLearning = () => {
 .stat-value {
   font-size: 1.5rem;
   font-weight: 700;
+}
+
+/* Diagnosis Section */
+.diagnosis-section {
+    margin-bottom: 40px;
+}
+
+.diagnosis-grid {
+    display: grid;
+    grid-template-columns: repeat(2, 1fr);
+    gap: 20px;
+}
+
+.diagnosis-card {
+    padding: 25px;
+    background: rgba(28, 50, 106, 0.241);
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    border-radius: 12px;
+}
+
+.diagnosis-card h3 {
+    margin: 0 0 10px 0;
+    font-size: 1.1rem;
+}
+
+.diagnosis-card .desc {
+    font-size: 0.9rem;
+    color: #ccc;
+    margin-bottom: 20px;
+}
+
+.comparison-chart {
+    display: flex;
+    flex-direction: column;
+    gap: 15px;
+    margin-bottom: 15px;
+}
+
+.bar-group {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+}
+
+.bar-group .label {
+    width: 80px;
+    font-size: 0.9rem;
+}
+
+.bar-bg {
+    flex: 1;
+    height: 10px;
+    background: rgba(255, 255, 255, 0.1);
+    border-radius: 5px;
+    overflow: hidden;
+}
+
+.bar-fill {
+    height: 100%;
+    border-radius: 5px;
+}
+
+.my-bar { background: #3b82f6; }
+.avg-bar { background: #9ca3af; }
+
+.insight {
+    font-size: 0.9rem;
+    color: #a7f3d0;
+    margin-top: 10px;
+}
+
+.risk-meter {
+    display: flex;
+    align-items: center;
+    gap: 20px;
+}
+
+.risk-circle {
+    width: 80px;
+    height: 80px;
+    border-radius: 50%;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    font-size: 1.2rem;
+    font-weight: bold;
+    border: 5px solid;
+}
+
+.risk-circle.low { border-color: #22c55e; color: #22c55e; }
+.risk-circle.medium { border-color: #eab308; color: #eab308; }
+.risk-circle.high { border-color: #ef4444; color: #ef4444; }
+
+.risk-info p {
+    margin: 5px 0;
+}
+
+.suggestion {
+    font-size: 0.9rem;
+    color: #ccc;
 }
 
 /* Goals Section */

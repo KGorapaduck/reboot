@@ -8,10 +8,16 @@ class QuizSerializer(serializers.ModelSerializer):
 
 class LectureSerializer(serializers.ModelSerializer):
     quizzes = QuizSerializer(many=True, read_only=True)
+    course_name = serializers.CharField(source='course.title', read_only=True)
 
     class Meta:
         model = Lecture
-        fields = ['id', 'title', 'video_url', 'duration', 'order_index', 'original_script', 'created_at', 'quizzes']
+        fields = [
+            'id', 'title', 'video_url', 'duration', 'order_index', 
+            'ai_status', 'course_name', 'original_script', 
+            'created_at', 'quizzes', 'script_segments', 
+            'checkpoints', 'supplemental_materials'
+        ]
 
 class CourseDetailSerializer(serializers.ModelSerializer):
     lectures = LectureSerializer(many=True, read_only=True)
@@ -19,7 +25,7 @@ class CourseDetailSerializer(serializers.ModelSerializer):
 
     class Meta:
         model = Course
-        fields = ['id', 'title', 'description', 'category', 'instructor', 'instructor_name', 'created_at', 'lectures']
+        fields = ['id', 'title', 'description', 'category', 'instructor', 'instructor_name', 'created_at', 'lectures', 'cohort_analytics']
 
 class CourseListSerializer(serializers.ModelSerializer):
     instructor_name = serializers.CharField(source='instructor.nickname', read_only=True)
@@ -27,7 +33,7 @@ class CourseListSerializer(serializers.ModelSerializer):
 
     class Meta:
         model = Course
-        fields = ['id', 'title', 'description', 'category', 'instructor_name', 'lecture_count', 'created_at']
+        fields = ['id', 'title', 'description', 'category', 'instructor_name', 'lecture_count', 'created_at', 'cohort_analytics']
 
 class QuizAttemptSerializer(serializers.ModelSerializer):
     class Meta:

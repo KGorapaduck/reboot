@@ -10,6 +10,7 @@ class Course(models.Model):
     category = models.CharField(max_length=50) # Frontend, Backend etc.
     instructor = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.SET_NULL, null=True, related_name='courses')
     created_at = models.DateTimeField(auto_now_add=True)
+    cohort_analytics = models.JSONField(default=dict, blank=True, help_text="Cached average stats for the course cohort")
 
     def __str__(self):
         return self.title
@@ -25,7 +26,7 @@ class Lecture(models.Model):
     course = models.ForeignKey(Course, on_delete=models.CASCADE, related_name='lectures')
     title = models.CharField(max_length=200)
     video_url = models.URLField()
-    duration = models.IntegerField(help_text="Duration in seconds")
+    duration = models.IntegerField(null=True, blank=True, help_text="Duration in seconds")
     order_index = models.IntegerField(default=0)
     
     # AI Processing Fields
@@ -33,6 +34,12 @@ class Lecture(models.Model):
     processing_error = models.TextField(blank=True, null=True)
     original_script = models.TextField(blank=True, help_text="Whisper STT result")
     embedding = VectorField(dimensions=1536, blank=True, null=True) # OpenAI embedding dimension
+    
+    # New JSON Fields for Advanced Features
+    script_segments = models.JSONField(default=list, blank=True, help_text="List of script segments for pinpoint search")
+    checkpoints = models.JSONField(default=list, blank=True, help_text="List of checkpoints/quizzes")
+    supplemental_materials = models.JSONField(default=list, blank=True, help_text="Conditional supplemental materials")
+    
     created_at = models.DateTimeField(auto_now_add=True)
 
     class Meta:

@@ -37,15 +37,23 @@ npm run dev
 웹 브라우저에서 `http://localhost:5173` 접속 후 다음 경로들을 테스트할 수 있습니다.
 (현재 백엔드 연동 전이므로 Mock Data로 동작합니다.)
 
-| 기능 | 경로 | 설명 |
-|---|---|---|
 | **대시보드** | `/dashboard` | 학습 진행 현황, 최근 강의 이어하기 |
 | **강의실** | `/classroom` | 동영상 플레이어, AI 튜터 채팅, 강의 노트 |
 | **포트폴리오** | `/portfolio` | [NEW] 스킬 기반 포트폴리오 목록 및 미리보기 |
 | **모의 면접** | `/interview` | [NEW] 면접관 페르소나 선택 및 채팅 면접 |
 | **마이페이지** | `/mypage` | [NEW] 프로필 정보 및 획득 스킬 배지 확인 |
 
-## 4. 문제 해결 (Troubleshooting)
+## 4. 테스트 계정 정보 (Test Accounts)
+
+개발 및 테스트를 위해 다음 계정을 사용하십시오.
+
+| 역할 | ID | Password | 비고 |
+|---|---|---|---|
+| **관리자 (Admin)** | `admin` | `password123` | Django Admin 접속용 |
+| **강사 (Instructor)** | `instructor1` | `password123` | 강의 업로드 및 대시보드 |
+| **학생 (Student)** | `student1` | `password123` | 학습 진행 및 마이페이지 |
+
+## 5. 문제 해결 (Troubleshooting)
 
 - **로그인 오류**: 현재는 데모 버전이므로 로그인 없이도 일부 페이지(`HomeView`) 접근 후 `Dashboard`로 이동 가능하도록 설정될 수 있습니다. (또는 수동으로 URL 입력)
 - **모듈 없음 오류**: `frontend` 폴더에서 `npm install`을 실행했는지 확인하세요.

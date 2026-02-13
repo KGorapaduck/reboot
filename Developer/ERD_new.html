@@ -91,6 +91,7 @@
             string category "카테고리"
             int instructor_id FK "강사 ID"
             datetime created_at
+            jsonb cohort_analytics "과정 평균 통계 (캐싱)"
             }
 
             Lecture {
@@ -103,6 +104,9 @@
             text processing_error "AI 처리 에러 로그"
             text original_script "Whisper STT 결과"
             vector embedding "pgvector (1536 dim) - 검색용"
+            jsonb script_segments "핀포인트 검색용 분절 데이터"
+            jsonb checkpoints "강의 중간 질문/퀴즈"
+            jsonb supplemental_materials "보충 자료 및 성찰 과제 조건"
             }
 
             %% AI 및 학습 도구 (AI & Study Tools)
@@ -137,6 +141,7 @@
             string status "ACTIVE, COMPLETED, DROPPED"
             datetime start_date
             datetime target_date "목표 완강일"
+            jsonb retention_metrics "이탈 위험도 분석"
             }
 
             CurriculumItem {
@@ -146,6 +151,8 @@
             int order_index "동적으로 조절 가능한 순서"
             boolean is_completed "완료 여부"
             datetime completed_at
+            jsonb learning_status "시청 기록/체크포인트 현황"
+            jsonb reflection_data "성찰 과제 및 피드백"
             }
 
             ReroutingLog {
